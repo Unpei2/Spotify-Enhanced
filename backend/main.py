@@ -1,9 +1,11 @@
 import spotipy
 import random
 import re
+import os
 
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
+from spotdl import Spotdl
 
 load_dotenv()
 
@@ -105,6 +107,13 @@ def get_songs(sp, playlist):
 
     return songs
         
+def get_uris(songs):
+    song_uris = []
+
+    for song in songs:
+        song_uris.append(song['uri'])
+
+    return song_uris
 
 def main():
     
@@ -123,7 +132,7 @@ def main():
     print(SEPARATOR)
     
 
-    songs = get_songs(sp, playlists[-2])
+    songs = get_songs(sp, playlists[0])
 
     print(SEPARATOR)
 
@@ -131,12 +140,14 @@ def main():
 
     print(SEPARATOR)
 
-    create_playlist(sp)
+    # create_playlist(sp)
 
     # playlists = get_playlists(sp)
     # add_songs_to_playlist(sp, songs, playlists[0])
 
-    
+    song_uris = get_uris(songs)
+    print(song_uris)
+    # use subprocesses to call spotdl and download based on uri
     
 
 if __name__ == "__main__":
