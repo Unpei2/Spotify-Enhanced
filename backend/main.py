@@ -158,7 +158,7 @@ def main():
         
     # use subprocesses to call spotdl and download based on uri
     
-    subprocess.run(["spotdl", "download", playlistUri, "--output", "music_downloads"])
+    subprocess.run(["spotdl", "download", playlistUri, "--output", "backend/music_downloads", "--audio", "youtube", "--save-errors", "backend/failed_downloads.txt"])
 
 if __name__ == "__main__":
     main()
