@@ -2,3 +2,5 @@
 .venv
 .env
 music_downloads
+failed_downloads.txt
+musicfm

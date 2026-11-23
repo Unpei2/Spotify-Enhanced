@@ -3,10 +3,13 @@ import random
 import re
 import os
 import subprocess
+import numpy as np
 
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
 from spotdl import Spotdl
+from pydub import AudioSegment
+
 
 load_dotenv()
 
@@ -116,6 +119,20 @@ def get_uris(songs):
 
     return song_uris
 
+def download_songs(playlistUri):
+    subprocess.run(["spotdl", "download", playlistUri, "--output", "backend/music_downloads", "--audio", "youtube", "--save-errors", "backend/failed_downloads.txt"])
+    
+    with open("backend/failed_downloads.txt", "r") as file:
+        items = file.read().splitlines()
+
+    print(items)
+
+def get_clips():
+    songs = os.listdir("C:/Spotify-Enhanced/backend/music_downloads")
+
+    for item in songs:
+        song = AudioSegment.from_mp3(item)
+
 def main():
     
     
@@ -155,10 +172,12 @@ def main():
 
     playlistUri = playlists[-7]['external_urls']['spotify']
         
-        
-    # use subprocesses to call spotdl and download based on uri
-    
-    subprocess.run(["spotdl", "download", playlistUri, "--output", "backend/music_downloads", "--audio", "youtube", "--save-errors", "backend/failed_downloads.txt"])
+    # download_songs(playlistUri)
+    get_clips()
 
 if __name__ == "__main__":
+    
     main()
+
+# wget -Outfile C:\Spotify-Enhanced\backend\models\musicfm\data\ https://huggingface.co/minzwon/MusicFM/resolve/main/msd_stats.json
+# wget -Outfile C:\Spotify-Enhanced\backend\models\musicfm\data\ https://huggingface.co/minzwon/MusicFM/resolve/main/pretrained_msd.pt
