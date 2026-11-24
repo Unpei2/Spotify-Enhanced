@@ -120,18 +120,21 @@ def get_uris(songs):
     return song_uris
 
 def download_songs(playlistUri):
-    subprocess.run(["spotdl", "download", playlistUri, "--output", "backend/music_downloads", "--audio", "youtube", "--save-errors", "backend/failed_downloads.txt"])
+    subprocess.run(["spotdl", "download", playlistUri, "--output", "music_downloads", "--audio", "youtube", "--save-errors", "failed_downloads.txt"])
     
-    with open("backend/failed_downloads.txt", "r") as file:
+    with open("failed_downloads.txt", "r") as file:
         items = file.read().splitlines()
 
     print(items)
 
 def get_clips():
-    songs = os.listdir("C:/Spotify-Enhanced/backend/music_downloads")
 
+    songs = os.listdir(f"music_downloads")
+    print(songs)
     for item in songs:
-        song = AudioSegment.from_mp3(item)
+        
+        song = AudioSegment.from_mp3(f"music_downloads/{item}")
+        print(item, song.duration_seconds)
 
 def main():
     
@@ -170,7 +173,7 @@ def main():
     print(playlists[0]['external_urls'].keys())
     print(playlists[0]['external_urls']['spotify'])
 
-    playlistUri = playlists[-7]['external_urls']['spotify']
+    playlistUri = playlists[0]['external_urls']['spotify']
         
     # download_songs(playlistUri)
     get_clips()
