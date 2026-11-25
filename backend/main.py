@@ -119,8 +119,11 @@ def get_uris(songs):
 
     return song_uris
 
-def download_songs(playlistUri):
-    subprocess.run(["spotdl", "download", playlistUri, "--output", "music_downloads", "--audio", "youtube", "--save-errors", "failed_downloads.txt"])
+def download_songs(playlist):
+    playlistUri = playlist['external_urls']['spotify']
+    print(playlist.keys())
+
+    subprocess.run(["spotdl", "download", playlistUri, "--output", "~/Spotify-Enhanced/backend/music_downloads", "--audio", "youtube", "--save-errors", "~/Spotify-Enhanced/backend/failed_downloads.txt"])
     
     with open("failed_downloads.txt", "r") as file:
         items = file.read().splitlines()
@@ -173,9 +176,9 @@ def main():
     print(playlists[0]['external_urls'].keys())
     print(playlists[0]['external_urls']['spotify'])
 
-    playlistUri = playlists[0]['external_urls']['spotify']
+    
         
-    # download_songs(playlistUri)
+    download_songs(playlists[0])
     get_clips()
 
 if __name__ == "__main__":
