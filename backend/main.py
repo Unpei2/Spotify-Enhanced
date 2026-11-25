@@ -9,11 +9,13 @@ from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
 from spotdl import Spotdl
 from pydub import AudioSegment
+from pathlib import Path
 
 
 load_dotenv()
 
 SEPARATOR = "\n----------\n"
+BACKEND_DIR = Path(__file__).resolve().parent
 
 def add_songs_to_playlist(sp, songList, playlist):
 
@@ -119,28 +121,64 @@ def get_uris(songs):
 
     return song_uris
 
-def download_songs(playlistUri):
-    subprocess.run(["spotdl", "download", playlistUri, "--output", "music_downloads", "--audio", "youtube", "--save-errors", "failed_downloads.txt"])
+def name_converter(name):
+    temp = name.split(" ")
+    return "_".join(temp)
+
+
+def download_songs(playlist):
+    playlistUri = playlist['external_urls']['spotify']
+    name = name_converter(playlist['name'])
     
-    with open("failed_downloads.txt", "r") as file:
-        items = file.read().splitlines()
+    downloadLocation = BACKEND_DIR / "music_downloads"
 
-    print(items)
+    subprocess.run(["spotdl", "download", playlistUri, "--output", f"{name}_downloads", "--audio", "youtube", "--save-errors", f"{name}_failed_downloads.txt"]
+                   , cwd=downloadLocation)
 
-def get_clips():
+    failed = downloadLocation / f"{name}_failed_downloads.txt"
+    if failed.exists():
+        with open(f"{downloadLocation}/{name}_failed_downloads.txt", "r") as file:
+            items = file.read().splitlines()
 
-    songs = os.listdir(f"music_downloads")
-    print(songs)
+        print(items)
+
+def pad_end(x, n):
+    pass
+
+def get_clips(playlist):
+    name = name_converter(playlist['name'])
+    path  = BACKEND_DIR / f"music_downloads/{name}_downloads"
+    songs = os.listdir(path)
+    
+    
     for item in songs:
+
+        audio_clips = []
+        song = AudioSegment.from_mp3(f"{path}/{item}").set_channels(1).set_frame_rate(24000)
+    
+        fullSections = song.duration_seconds // 30
+
+        for i in range(1, int(fullSections) + 1):
+            # time is in milliseconds
+            start = (i-1) * 30000
+            end = i * 30000
+            audio_clips.append(song[start : end])
+
+        # for the end, take the last 30 seconds instead of padding with silence to get more accurate representation of song
+        # if the clip has a remainder of one second at the end, it would have 29 secs of silence
+        end = song[30000:]
         
-        song = AudioSegment.from_mp3(f"music_downloads/{item}")
-        print(item, song.duration_seconds)
+        
 
 def main():
     
-    
     scope = "user-library-read user-read-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative user-modify-playback-state playlist-modify-public playlist-modify-private"
-
+    
+    try: 
+        os.mkdir(BACKEND_DIR/"music_downloads")
+        print("Music Downloads folder created")
+    except FileExistsError:
+        print("music_downloads already made.")
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
     print(SEPARATOR)
     
@@ -169,18 +207,14 @@ def main():
     # song_uris = get_uris(songs)
     # print(song_uris)
 
-    print(playlists[0])
-    print(playlists[0]['external_urls'].keys())
-    print(playlists[0]['external_urls']['spotify'])
+    print(playlists[0].keys())
+    
 
-    playlistUri = playlists[0]['external_urls']['spotify']
         
-    # download_songs(playlistUri)
-    get_clips()
+    # download_songs(playlists[0])
+    get_clips(playlists[0])
 
 if __name__ == "__main__":
     
     main()
 
-# wget -Outfile C:\Spotify-Enhanced\backend\models\musicfm\data\ https://huggingface.co/minzwon/MusicFM/resolve/main/msd_stats.json
-# wget -Outfile C:\Spotify-Enhanced\backend\models\musicfm\data\ https://huggingface.co/minzwon/MusicFM/resolve/main/pretrained_msd.pt
