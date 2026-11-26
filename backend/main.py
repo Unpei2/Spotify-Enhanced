@@ -4,6 +4,7 @@ import re
 import os
 import subprocess
 import numpy as np
+import shutil
 
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
@@ -148,11 +149,14 @@ def pad_end(x, n):
 def get_clips(playlist):
     name = name_converter(playlist['name'])
     path  = BACKEND_DIR / f"music_downloads/{name}_downloads"
+    embeddingsPath = BACKEND_DIR / f"embeddings/{name}_embeddings"
     songs = os.listdir(path)
     
-    
+    all_clips = {}
     for item in songs:
-
+        print(item)
+        
+        
         audio_clips = []
         song = AudioSegment.from_mp3(f"{path}/{item}").set_channels(1).set_frame_rate(24000)
     
@@ -166,8 +170,26 @@ def get_clips(playlist):
 
         # for the end, take the last 30 seconds instead of padding with silence to get more accurate representation of song
         # if the clip has a remainder of one second at the end, it would have 29 secs of silence
-        end = song[30000:]
-        
+        if song.duration_seconds % 30 > 0:
+            end = song[-30000:]
+            audio_clips.append(end)
+
+        # convert to numpy float32 array
+        arrs = []
+        for clip in audio_clips:
+            samples = clip.get_array_of_samples()
+            arr = np.array(samples, dtype=np.float32)
+            arr /= np.iinfo(samples.typecode).max
+            arrs.append(arr)
+
+        all_clips[item] = arrs
+    # make embeddings folder
+    embeddingsPath.mkdir(parents=True, exist_ok=True)
+    for song, embeddings in all_clips.items():
+        np.save(embeddingsPath / Path(song).stem, embeddings)
+
+    # remove music donwloads folder of mp3s (dont need after making embeddings)
+    shutil.rmtree(path)
         
 
 def main():
@@ -211,8 +233,9 @@ def main():
     
 
         
-    # download_songs(playlists[0])
+    download_songs(playlists[0])
     get_clips(playlists[0])
+    print("abracadabra")
 
 if __name__ == "__main__":
     
