@@ -5,6 +5,7 @@ import os
 import subprocess
 import numpy as np
 import shutil
+import processing_clips as pc
 
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
@@ -13,10 +14,11 @@ from pydub import AudioSegment
 from pathlib import Path
 
 
+
 load_dotenv()
 
 SEPARATOR = "\n----------\n"
-BACKEND_DIR = Path(__file__).resolve().parent
+
 
 def add_songs_to_playlist(sp, songList, playlist):
 
@@ -40,14 +42,6 @@ def add_songs_to_queue(sp, songList):
             sp.add_to_queue(song['uri'])
     except Exception:
         print("Spotify player must be open.")
-
-def fischer_yates_shuffle(songs):
-    
-    for i in range((len(songs)) - 1, 0  , -1):
-        j = random.randint(0, i)
-        temp = songs[i]
-        songs[i] = songs[j]
-        songs[j] = temp
 
 def print_song_information(song):
     
@@ -122,16 +116,14 @@ def get_uris(songs):
 
     return song_uris
 
-def name_converter(name):
-    temp = name.split(" ")
-    return "_".join(temp)
+
 
 
 def download_songs(playlist):
     playlistUri = playlist['external_urls']['spotify']
-    name = name_converter(playlist['name'])
+    name = pc.name_converter(playlist['name'])
     
-    downloadLocation = BACKEND_DIR / "music_downloads"
+    downloadLocation = pc.BACKEND_DIR / "music_downloads"
 
     subprocess.run(["spotdl", "download", playlistUri, "--output", f"{name}_downloads", "--audio", "youtube", "--save-errors", f"{name}_failed_downloads.txt"]
                    , cwd=downloadLocation)
@@ -143,61 +135,12 @@ def download_songs(playlist):
 
         print(items)
 
-def pad_end(x, n):
-    pass
-
-def get_clips(playlist):
-    name = name_converter(playlist['name'])
-    path  = BACKEND_DIR / f"music_downloads/{name}_downloads"
-    embeddingsPath = BACKEND_DIR / f"embeddings/{name}_embeddings"
-    songs = os.listdir(path)
-    
-    all_clips = {}
-    for item in songs:
-        print(item)
-        
-        
-        audio_clips = []
-        song = AudioSegment.from_mp3(f"{path}/{item}").set_channels(1).set_frame_rate(24000)
-    
-        fullSections = song.duration_seconds // 30
-
-        for i in range(1, int(fullSections) + 1):
-            # time is in milliseconds
-            start = (i-1) * 30000
-            end = i * 30000
-            audio_clips.append(song[start : end])
-
-        # for the end, take the last 30 seconds instead of padding with silence to get more accurate representation of song
-        # if the clip has a remainder of one second at the end, it would have 29 secs of silence
-        if song.duration_seconds % 30 > 0:
-            end = song[-30000:]
-            audio_clips.append(end)
-
-        # convert to numpy float32 array
-        arrs = []
-        for clip in audio_clips:
-            samples = clip.get_array_of_samples()
-            arr = np.array(samples, dtype=np.float32)
-            arr /= np.iinfo(samples.typecode).max
-            arrs.append(arr)
-
-        all_clips[item] = arrs
-    # make embeddings folder
-    embeddingsPath.mkdir(parents=True, exist_ok=True)
-    for song, embeddings in all_clips.items():
-        np.save(embeddingsPath / Path(song).stem, embeddings)
-
-    # remove music donwloads folder of mp3s (dont need after making embeddings)
-    shutil.rmtree(path)
-        
-
 def main():
     
     scope = "user-library-read user-read-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative user-modify-playback-state playlist-modify-public playlist-modify-private"
     
     try: 
-        os.mkdir(BACKEND_DIR/"music_downloads")
+        os.mkdir(pc.BACKEND_DIR/"music_downloads")
         print("Music Downloads folder created")
     except FileExistsError:
         print("music_downloads already made.")
@@ -233,8 +176,9 @@ def main():
     
 
         
-    download_songs(playlists[0])
-    get_clips(playlists[0])
+    # download_songs(playlists[0])
+    # pc.get_clips(playlists[0])
+    pc.get_embeddings(playlists[0])
     print("abracadabra")
 
 if __name__ == "__main__":
