@@ -6,6 +6,7 @@ import subprocess
 import numpy as np
 import shutil
 import processing_clips as pc
+import shuffle_types as st
 
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
@@ -178,8 +179,12 @@ def main():
         
     # download_songs(playlists[0])
     # pc.get_clips(playlists[0])
-    pc.get_embeddings(playlists[0])
+    # pc.get_embeddings(playlists[0])
     print("abracadabra")
+
+    # pass in song name
+    st.knn_search_one_vector("Joji - Die For You", 3)
+
 
 if __name__ == "__main__":
     

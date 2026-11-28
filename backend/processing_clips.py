@@ -112,7 +112,7 @@ def get_embeddings(playlist):
                 # print(emb.shape)
                 
 
-
+        # saving embeddings 
         np.save(embeddingsPath / Path(song).stem, torch.stack(toSave).numpy())
 
     # remove clips folder of numpys (dont need after making embeddings)
